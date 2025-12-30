@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slot Game 🥀🌷🌹💵👙</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #1e3c72, #2a5298);
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 15px;
+        }
+        .reels {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            font-size: 100px;
+            height: 150px;
+            overflow: hidden;
+        }
+        .reel {
+            width: 120px;
+            background: #fff;
+            color: #000;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px gold;
+        }
+        .spinning {
+            animation: spin 0.5s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-1000px); }
+        }
+        .info {
+            font-size: 1.5em;
+            margin: 20px 0;
+        }
+        button {
+            background: #ff416c;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #ff4b2b;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .payout {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        .ai-status {
+            font-style: italic;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Slot Machine 🥀🌷🌹💵👙</h1>
+        <div class="info">Coin kamu: <span id="coins">100</span></div>
+        <div class="info">Bet per spin: 10 coin</div>
+        
+        <div class="reels">
+            <div class="reel" id="reel1">?</div>
+            <div class="reel" id="reel2">?</div>
+            <div class="reel" id="reel3">?</div>
+        </div>
+        
+        <button id="spinBtn">Spin Manual</button>
+        <button id="toggleAI">Mulai AI Play</button>
+        
+        <div class="ai-status" id="aiStatus">AI: Mati</div>
+        
+        <div class="payout" id="result"></div>
+        
+        <div class="payout">
+            <strong>Payout (x bet):</strong><br>
+            🥀🥀🥀 → x10<br>
+            🌷🌷🌷 → x20<br>
+            🌹🌹🌹 → x30<br>
+            💵💵💵 → x50<br>
+            👙👙👙 → x100 (JACKPOT!)
+        </div>
+    </div>
+
+    <script>
+        const symbols = ['🥀', '🌷', '🌹', '💵', '👙'];
+        const payouts = { '🥀': 10, '🌷': 20, '🌹': 30, '💵': 50, '👙': 100 };
+        
+        let coins = 100;
+        let isSpinning = false;
+        let aiInterval = null;
+        let aiActive = false;
+        
+        const reel1 = document.getElementById('reel1');
+        const reel2 = document.getElementById('reel2');
+        const reel3 = document.getElementById('reel3');
+        const coinsDisplay = document.getElementById('coins');
+        const resultDisplay = document.getElementById('result');
+        const spinBtn = document.getElementById('spinBtn');
+        const toggleBtn = document.getElementById('toggleAI');
+        const aiStatus = document.getElementById('aiStatus');
+        
+        function updateCoins() {
+            coinsDisplay.textContent = coins;
+            if (coins < 10) {
+                spinBtn.disabled = true;
+                if (aiActive) toggleAI();
+            } else {
+                spinBtn.disabled = false;
+            }
+        }
+        
+        function spinReels() {
+            if (isSpinning || coins < 10) return;
+            
+            coins -= 10;
+            updateCoins();
+            isSpinning = true;
+            resultDisplay.textContent = 'Spinning...';
+            spinBtn.disabled = true;
+            
+            // Animasi spin
+            reel1.classList.add('spinning');
+            reel2.classList.add('spinning');
+            reel3.classList.add('spinning');
+            
+            // Acak simbol
+            setTimeout(() => {
+                const r1 = symbols[Math.floor(Math.random() * symbols.length)];
+                const r2 = symbols[Math.floor(Math.random() * symbols.length)];
+                const r3 = symbols[Math.floor(Math.random() * symbols.length)];
+                
+                reel1.textContent = r1;
+                reel2.textContent = r2;
+                reel3.textContent = r3;
+                
+                reel1.classList.remove('spinning');
+                reel2.classList.remove('spinning');
+                reel3.classList.remove('spinning');
+                
+                // Cek menang
+                if (r1 === r2 && r2 === r3) {
+                    const multiplier = payouts[r1];
+                    const win = multiplier * 10;
+                    coins += win;
+                    resultDisplay.textContent = `JACKPOT! \( {r1} \){r2}\( {r3} → + \){win} coin!`;
+                } else {
+                    resultDisplay.textContent = 'Coba lagi...';
+                }
+                
+                updateCoins();
+                isSpinning = false;
+            }, 2000); // durasi spin 2 detik
+        }
+        
+        function toggleAI() {
+            if (aiActive) {
+                clearInterval(aiInterval);
+                aiActive = false;
+                toggleBtn.textContent = 'Mulai AI Play';
+                aiStatus.textContent = 'AI: Mati';
+            } else {
+                if (coins < 10) {
+                    alert('Coin kurang untuk mulai AI!');
+                    return;
+                }
+                aiInterval = setInterval(() => {
+                    if (coins >= 10) {
+                        spinReels();
+                    } else {
+                        toggleAI(); // mati otomatis kalau habis
+                    }
+                }, 10000); // AI spin setiap 10 detik
+                aiActive = true;
+                toggleBtn.textContent = 'Stop AI';
+                aiStatus.textContent = 'AI: Sedang bermain otomatis...';
+            }
+        }
+        
+        spinBtn.addEventListener('click', spinReels);
+        toggleBtn.addEventListener('click', toggleAI);
+        
+        // Inisial
+        updateCoins();
+        reel1.textContent = symbols[0];
+        reel2.textContent = symbols[1];
+        reel3.textContent = symbols[2];
+    </script>
+</body>
+</html>

@@ -7,14 +7,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Cacing Arena">
+      <link rel="icon" href="icon-192x192.png" sizes="192x192">
     
     <link rel="manifest" href="./manifest.json">
-    <link rel="icon" href="https://via.placeholder.com/192x192/a855f7/ffffff?text=CA" sizes="192x192">
     
     <title>Cacing Arena Pro - Mabar LAN</title>
     
     <style>
-        /* RESET */
+        /* RESET DAN ORIENTASI LANDSCAPE */
         * { 
             margin: 0; 
             padding: 0; 
@@ -22,6 +22,7 @@
             user-select: none; 
             -webkit-user-select: none;
             touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         
         html, body {
@@ -39,23 +40,315 @@
             font-family: 'Arial', sans-serif;
         }
         
-        /* LOADING */
+        /* PESAN ORIENTASI */
+        #orientation-message {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        @media screen and (orientation: portrait) and (max-width: 1024px) {
+            #orientation-message {
+                display: flex;
+            }
+        }
+        
+        /* CANVAS - FULLSCREEN LANDSCAPE */
+        #game {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #050510 0%, #0a0a1a 100%);
+            z-index: 1;
+        }
+        
+        /* UI LAYERS */
+        #ui-layer { 
+            position: absolute; 
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 100; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: radial-gradient(circle at center, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.95) 100%); 
+            backdrop-filter: blur(5px); 
+        }
+        
+        #room-layer { 
+            position: absolute; 
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 101; 
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            background: rgba(0,0,0,0.95); 
+        }
+        
+        /* PANEL MENU */
+        .panel { 
+            background: linear-gradient(135deg, #111122, #1a1a2e); 
+            padding: min(4vw, 30px); 
+            border-radius: min(4vw, 25px); 
+            border: min(0.8vw, 3px) solid #a855f7; 
+            width: 90vw; 
+            max-width: 450px; 
+            text-align: center; 
+            box-shadow: 0 0 min(5vw, 40px) rgba(168,85,247,0.4); 
+            animation: panel-glow 3s ease-in-out infinite alternate; 
+        }
+        
+        @keyframes panel-glow {
+            from { box-shadow: 0 0 min(3vw, 30px) rgba(168,85,247,0.4); }
+            to { box-shadow: 0 0 min(5vw, 50px) rgba(168,85,247,0.6); }
+        }
+        
+        /* HUD LANDSCAPE */
+        #hud {
+            position: absolute;
+            top: min(3vw, 20px);
+            left: min(3vw, 20px);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            gap: min(2vw, 10px);
+        }
+        
+        .hud-item {
+            background: rgba(20,20,40,0.85);
+            padding: min(2vw, 12px) min(3vw, 20px);
+            border-radius: min(3vw, 20px);
+            border: min(0.4vw, 2px) solid #a855f7;
+            display: flex;
+            align-items: center;
+            gap: min(2vw, 8px);
+            backdrop-filter: blur(10px);
+            min-width: max-content;
+            font-size: min(4vw, 16px);
+        }
+        
+        /* INFO PANEL */
+        #info-panel {
+            position: absolute;
+            top: min(3vw, 10px);
+            right: min(3vw, 10px);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            gap: min(2vw, 10px);
+        }
+        
+        .info-item {
+            background: rgba(20,20,40,0.85);
+            padding: min(2vw, 12px) min(3vw, 20px);
+            border-radius: min(3vw, 20px);
+            border: min(0.4vw, 2px) solid #3b82f6;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            font-size: min(3.5vw, 14px);
+        }
+        
+        /* ROOM INFO */
+        #room-info {
+            position: absolute;
+            top: min(3vw, 20px);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            display: none;
+            background: rgba(20,20,40,0.85);
+            padding: min(2vw, 12px) min(3vw, 20px);
+            border-radius: min(3vw, 20px);
+            border: min(0.4vw, 2px) solid #10b981;
+            backdrop-filter: blur(10px);
+            font-size: min(3.5vw, 14px);
+            text-align: center;
+        }
+        
+        /* PLAYER LIST */
+        #player-list {
+            position: absolute;
+            bottom: min(20vw, 120px);
+            right: min(3vw, 20px);
+            z-index: 50;
+            display: none;
+            background: rgba(20,20,40,0.9);
+            padding: min(2vw, 12px);
+            border-radius: min(2vw, 15px);
+            border: min(0.4vw, 2px) solid #3b82f6;
+            backdrop-filter: blur(10px);
+            max-width: min(40vw, 200px);
+            max-height: min(40vw, 200px);
+            overflow-y: auto;
+        }
+        
+        .player-list-item {
+            padding: min(1.5vw, 8px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: min(2vw, 10px);
+            font-size: min(3.5vw, 14px);
+        }
+        
+        .player-color-indicator {
+            width: min(3vw, 12px);
+            height: min(3vw, 12px);
+            border-radius: 50%;
+        }
+        
+        /* MINIMAP */
+        #minimap {
+            position: absolute;
+            bottom: min(3vw, 20px);
+            right: min(3vw, 20px);
+            width: min(25vw, 150px);
+            height: min(25vw, 150px);
+            z-index: 50;
+            display: none;
+            background: rgba(20,20,40,0.9);
+            border-radius: min(2vw, 15px);
+            border: min(0.4vw, 3px) solid #3b82f6;
+            overflow: hidden;
+        }
+        
+        /* MOBILE CONTROLS */
+        #mobile-controls {
+            position: absolute;
+            bottom: min(4vw, 30px);
+            left: 0;
+            right: 0;
+            z-index: 50;
+            display: none;
+            justify-content: center;
+            gap: min(4vw, 25px);
+            padding: 0 min(4vw, 20px);
+        }
+        
+        .mobile-btn {
+            width: min(15vw, 70px);
+            height: min(15vw, 70px);
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            border: min(0.6vw, 3px) solid white;
+            color: white;
+            font-size: min(7vw, 28px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 min(1vw, 4px) min(2vw, 8px) rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+        
+        .mobile-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .mobile-btn.shoot {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        .mobile-btn.speed {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .mobile-btn.magnet {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        /* AMMO DISPLAY */
+        #ammo-display {
+            position: absolute;
+            bottom: min(25vw, 150px);
+            left: min(3vw, 20px);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            gap: min(1vw, 5px);
+        }
+        
+        .ammo-item {
+            background: rgba(20,20,40,0.85);
+            padding: min(1.5vw, 8px) min(2vw, 12px);
+            border-radius: min(2vw, 12px);
+            border: min(0.3vw, 1.5px) solid #f59e0b;
+            display: flex;
+            align-items: center;
+            gap: min(1.5vw, 8px);
+            backdrop-filter: blur(10px);
+            font-size: min(3.5vw, 14px);
+        }
+        
+        /* DAMAGE INDICATOR */
+        .damage-popup {
+            position: absolute;
+            color: #ef4444;
+            font-weight: bold;
+            font-size: min(4vw, 18px);
+            text-shadow: 0 0 min(1vw, 5px) rgba(255,0,0,0.5);
+            z-index: 60;
+            pointer-events: none;
+            animation: damageFloat 1s ease-out forwards;
+        }
+        
+        @keyframes damageFloat {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        
+        /* COLOR TRANSITION EFFECT */
+        .color-transition {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 30;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+        
+        /* LOADING SCREEN */
         #loading { 
-            position: fixed; 
-            top: 0; left: 0; 
-            width: 100%; height: 100%; 
+            position: absolute; 
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 999; 
             background: #000; 
             display: flex; 
             flex-direction: column; 
             justify-content: center; 
             align-items: center; 
-            z-index: 9999; 
+            font-size: min(5vw, 24px); 
+            gap: min(4vw, 20px); 
         }
         
         .spinner { 
-            width: 50px; height: 50px; 
-            border: 5px solid #333; 
-            border-top: 5px solid #a855f7; 
+            width: min(12vw, 50px); 
+            height: min(12vw, 50px); 
+            border: min(1vw, 5px) solid #333; 
+            border-top: min(1vw, 5px) solid #a855f7; 
             border-radius: 50%; 
             animation: spin 1s linear infinite; 
         }
@@ -65,362 +358,387 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* CANVAS */
-        #game {
-            display: block;
-            width: 100%;
-            height: 100%;
-            background: #050510;
-        }
-        
-        /* MENU */
-        #menu {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #111122, #1a1a2e);
-            padding: 30px;
-            border-radius: 20px;
-            border: 3px solid #a855f7;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 0 40px rgba(168,85,247,0.4);
-            z-index: 100;
-        }
-        
-        h1 {
-            color: #a855f7;
-            margin-bottom: 20px;
-            font-size: 28px;
-        }
-        
-        input, button {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 10px;
-            border: none;
-            font-size: 16px;
-        }
-        
-        input {
-            background: rgba(255,255,255,0.1);
-            color: white;
-            text-align: center;
-            border: 2px solid #333344;
-        }
-        
+        /* BUTTON STYLES */
         .btn {
-            background: linear-gradient(135deg, #a855f7, #7c3aed);
-            color: white;
+            width: 100%;
+            padding: min(3vw, 16px);
+            margin: min(2vw, 10px) 0;
+            border-radius: min(3vw, 15px);
+            border: none;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.2s;
+            color: white;
+            font-size: min(4vw, 16px);
+            transition: all 0.2s;
         }
         
-        .btn:active { transform: scale(0.98); }
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-play {
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+        }
         
         .btn-mabar {
             background: linear-gradient(135deg, #3b82f6, #1d4ed8);
         }
         
-        /* HUD */
-        .hud {
+        .btn-room {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .btn-exit {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        /* INPUT */
+        input {
+            width: 100%;
+            padding: min(3vw, 15px);
+            margin-bottom: min(3vw, 15px);
+            border-radius: min(2vw, 12px);
+            border: min(0.4vw, 2px) solid #333344;
+            background: rgba(30,30,45,0.8);
+            color: #fff;
+            text-align: center;
+            font-size: min(4vw, 16px);
+        }
+        
+        /* RESPONSIVE TYPOGRAPHY */
+        h1 {
+            font-size: min(7vw, 32px);
+            margin-bottom: min(3vw, 15px);
+            color: #a855f7;
+            text-shadow: 0 0 min(2vw, 20px) rgba(168,85,247,0.7);
+        }
+        
+        h2 {
+            font-size: min(5vw, 24px);
+            margin-bottom: min(3vw, 15px);
+            color: #a855f7;
+        }
+        
+        /* ANIMASI */
+        @keyframes colorFlash {
+            0% { opacity: 0; }
+            50% { opacity: 0.7; }
+            100% { opacity: 0; }
+        }
+        
+        .color-flash {
+            animation: colorFlash 2s ease-out;
+        }
+        
+        /* SHOOT COOLDOWN INDICATOR */
+        .cooldown-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            display: none;
+        }
+        
+        /* STATUS MESSAGES */
+        .status-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: min(4vw, 20px) min(6vw, 30px);
+            border-radius: min(3vw, 15px);
+            font-size: min(4vw, 18px);
+            text-align: center;
+            z-index: 200;
+            border: min(0.4vw, 2px) solid #a855f7;
+            box-shadow: 0 0 min(3vw, 20px) rgba(168,85,247,0.5);
+            max-width: 80vw;
+        }
+        
+        /* CHAT SYSTEM */
+        #chat-container {
+            position: absolute;
+            bottom: min(20vw, 120px);
+            left: min(3vw, 20px);
+            z-index: 50;
+            display: none;
+            width: min(40vw, 250px);
+            max-height: min(30vw, 150px);
+            background: rgba(20,20,40,0.9);
+            border-radius: min(2vw, 12px);
+            border: min(0.4vw, 2px) solid #10b981;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        #chat-messages {
+            height: min(20vw, 100px);
+            overflow-y: auto;
+            padding: min(2vw, 10px);
+            font-size: min(3vw, 12px);
+        }
+        
+        .chat-message {
+            margin-bottom: min(1vw, 5px);
+            padding: min(1vw, 5px);
+            border-radius: min(1vw, 5px);
+            background: rgba(255,255,255,0.1);
+            word-break: break-word;
+        }
+        
+        #chat-input-container {
+            display: flex;
+            padding: min(2vw, 10px);
+            gap: min(1vw, 5px);
+        }
+        
+        #chat-input {
+            flex: 1;
+            padding: min(1.5vw, 8px);
+            border-radius: min(1vw, 5px);
+            border: 1px solid #444;
+            background: rgba(30,30,45,0.8);
+            color: white;
+            font-size: min(3vw, 12px);
+        }
+        
+        #chat-send {
+            padding: min(1.5vw, 8px) min(2vw, 12px);
+            border-radius: min(1vw, 5px);
+            border: none;
+            background: #10b981;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: min(3vw, 12px);
+        }
+        
+        #chat-toggle {
+            position: absolute;
+            bottom: min(20vw, 120px);
+            left: min(3vw, 20px);
+            width: min(10vw, 40px);
+            height: min(10vw, 40px);
+            border-radius: 50%;
+            background: #10b981;
+            border: none;
+            color: white;
+            font-size: min(5vw, 20px);
+            cursor: pointer;
+            z-index: 51;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 min(2vw, 8px) rgba(0,0,0,0.3);
+        }
+        
+        /* AUDIO BUTTON */
+        #audio-toggle-btn {
             position: fixed;
             top: 20px;
-            left: 20px;
-            background: rgba(20,20,40,0.8);
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #a855f7;
-            z-index: 50;
-            display: none;
-        }
-        
-        /* MOBILE CONTROLS */
-        #mobile-controls {
-            position: fixed;
-            bottom: 30px;
-            left: 0;
-            right: 0;
-            display: none;
-            justify-content: space-around;
-            padding: 0 20px;
-            z-index: 50;
-        }
-        
-        .control-btn {
-            width: 70px;
-            height: 70px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #a855f7, #7c3aed);
-            border: 3px solid white;
+            background: rgba(20, 20, 40, 0.9);
+            border: 3px solid #a855f7;
             color: white;
             font-size: 24px;
+            cursor: pointer;
+            z-index: 10000;
             display: flex;
             justify-content: center;
             align-items: center;
-            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         
-        .control-btn.shoot {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
+        #audio-toggle-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+        }
+        
+        /* PWA INSTALL BUTTON */
+        #pwa-install-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(168,85,247,0.4);
+            display: none;
+            animation: fadeIn 0.3s, pulse 2s infinite;
+        }
+        
+        #pwa-install-btn:hover {
+            animation: none;
+            transform: scale(1.05);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
 <body>
+    <!-- PESAN ORIENTASI -->
+    <div id="orientation-message">
+        <div style="padding: 20px;">
+            <div style="font-size: 32px; margin-bottom: 20px;">🔄</div>
+            <h2>Putar HP ke Posisi Landscape!</h2>
+            <p style="margin-top: 20px; color: #aaa;">Game ini dirancang untuk dimainkan dalam mode landscape</p>
+        </div>
+    </div>
+    
     <!-- LOADING -->
     <div id="loading">
         <div class="spinner"></div>
-        <p style="margin-top: 20px; font-size: 18px;">Loading Game...</p>
+        <p>Loading Game...</p>
     </div>
     
-    <!-- CANVAS -->
+    <!-- CANVAS GAME -->
     <canvas id="game"></canvas>
     
-    <!-- MENU -->
-    <div id="menu">
-        <h1>🎮 CACING MABAR</h1>
-        <input type="text" id="nick" placeholder="Nama Player" value="Player" maxlength="12">
-        <button class="btn" onclick="startGame()">🎮 MAIN GAME</button>
-        <button class="btn btn-mabar" onclick="alert('Fitur Mabar LAN akan datang!')">👥 MABAR LAN</button>
-        
-        <div style="margin-top: 20px; padding: 15px; background: rgba(168,85,247,0.1); border-radius: 10px; text-align: left; font-size: 14px;">
-            <div style="color: #a855f7; font-weight: bold; margin-bottom: 10px;">🎮 CARA MAIN:</div>
-            <div>• Sentuh/tap untuk bergerak</div>
-            <div>• Tekan tombol 🔫 untuk tembak</div>
-            <div>• Makan makanan 🍎 untuk skor</div>
+    <!-- EFFECT TRANSISI WARNA -->
+    <div id="color-transition" class="color-transition"></div>
+    
+    <!-- UI MENU -->
+    <div id="ui-layer">
+        <div class="panel">
+            <h1>🔫 CACING MABAR</h1>
+            <input type="text" id="nick" placeholder="Nama Player" value="Player" maxlength="12">
+            <button class="btn btn-play" onclick="Game.startSolo()">🎮 MAIN SOLO</button>
+            <button class="btn btn-mabar" onclick="Room.show()">👥 MABAR LAN</button>
+            
+            <!-- TOMBOL INSTALL PWA -->
+            <button id="menu-install-btn" class="btn" 
+                    style="background: linear-gradient(135deg, #f59e0b, #d97706); margin-top: 10px;"
+                    onclick="showInstallGuide()">
+                📲 INSTALL APP
+            </button>
+            
+            <div style="margin-top: min(4vw, 20px); color: #f59e0b; font-size: min(3.5vw, 14px); text-align: left; padding: 0 min(2vw, 10px);">
+                <div>🎯 Makan makanan untuk skor & peluru</div>
+                <div>🔫 Tekan tombol TEMBAK untuk serang</div>
+                <div>👥 Mabar dengan teman 1 WiFi</div>
+                <div>🌈 Warna berubah setiap 20.000 skor</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ROOM MENU -->
+    <div id="room-layer">
+        <div class="panel">
+            <h2>👥 MABAR LAN</h2>
+            <input type="text" id="room-id" placeholder="Kode Room (4 digit)" maxlength="4" pattern="[0-9]{4}">
+            <button class="btn btn-room" onclick="Room.join()">✅ GABUNG ROOM</button>
+            <button class="btn btn-room" onclick="Room.create()">🆕 BUAT ROOM</button>
+            <button class="btn btn-exit" onclick="Room.hide()">⬅️ KEMBALI</button>
+            <div id="room-status" style="margin-top: min(3vw, 15px); color: #aaa; font-size: min(3.5vw, 14px);"></div>
+            <div style="margin-top: min(3vw, 15px); color: #3b82f6; font-size: min(3vw, 12px);">
+                🤝 Main dengan teman dalam 1 WiFi!<br>
+                Buat room dan beri kode ke temanmu.
+            </div>
         </div>
     </div>
     
     <!-- HUD -->
-    <div class="hud" id="hud">
-        <div>🎯 Score: <span id="score">0</span></div>
-        <div>❤️ Health: <span id="health">100</span>%</div>
+    <div id="hud">
+        <div class="hud-item">🎯 <span id="score">0</span></div>
+        <div class="hud-item">🪙 <span id="coins">0</span></div>
+        <div class="hud-item">❤️ <span id="health">100</span>%</div>
+        <div class="hud-item">🌈 <span id="color-level">1</span></div>
+    </div>
+    
+    <!-- ROOM INFO -->
+    <div id="room-info">
+        🎮 ROOM: <span id="room-code">----</span>
+    </div>
+    
+    <!-- INFO PANEL -->
+    <div id="info-panel">
+        <div class="info-item">
+            <div>Level: <span id="current-color">Ungu</span></div>
+            <div style="font-size: min(3vw, 12px); color: #aaa;">Next: <span id="next-at">15.000</span></div>
+        </div>
+        <div class="info-item" style="border-color: #ef4444;">
+            <div>⚔️ Kekuatan: <span id="power">100%</span></div>
+        </div>
+    </div>
+    
+    <!-- PLAYER LIST -->
+    <div id="player-list">
+        <h4 style="margin-bottom: min(2vw, 10px); color: #3b82f6; font-size: min(3.5vw, 14px);">👥 PEMAIN:</h4>
+        <div id="players-container"></div>
+    </div>
+    
+    <!-- AMMO DISPLAY -->
+    <div id="ammo-display">
+        <!-- Ammo items akan diisi oleh JavaScript -->
+    </div>
+    
+    <!-- MINIMAP -->
+    <div id="minimap">
+        <canvas id="minimap-canvas"></canvas>
+    </div>
+    
+    <!-- CHAT SYSTEM -->
+    <button id="chat-toggle" onclick="Chat.toggle()">💬</button>
+    <div id="chat-container">
+        <div id="chat-messages"></div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Pesan..." maxlength="80">
+            <button id="chat-send" onclick="Chat.send()">➤</button>
+        </div>
     </div>
     
     <!-- MOBILE CONTROLS -->
     <div id="mobile-controls">
-        <div class="control-btn" onclick="shoot()">🔫</div>
-        <div class="control-btn" onclick="speedBoost()">⚡</div>
+        <div class="mobile-btn shoot" onclick="shoot()" id="shoot-btn">
+            🔫
+            <div class="cooldown-overlay" id="shoot-cooldown"></div>
+        </div>
+        <div class="mobile-btn speed" onclick="activateSpeed()">⚡</div>
+        <div class="mobile-btn magnet" onclick="activateMagnet()">🧲</div>
+        <div class="mobile-btn" onclick="pauseGame()">⏸️</div>
     </div>
 
+    <!-- AUDIO BUTTON -->
+    <button id="audio-toggle-btn">🔊</button>
+
+    <!-- PWA INSTALL BUTTON (Akan muncul otomatis) -->
+    <button id="pwa-install-btn">📲 INSTALL GAME</button>
+
+    <!-- PEERJS SCRIPT -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+
     <script>
-        // ==================== GAME SETUP ====================
+        console.log("🎮 Memulai Cacing Arena Pro...");
+
+        // ==================== FIXED INITIALIZATION ====================
+        // Setup canvas pertama
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
-        
-        // Game state
-        const GameState = {
-            active: false,
-            paused: false,
-            player: null,
-            foods: [],
-            projectiles: [],
-            score: 0,
-            health: 100,
-            lastShootTime: 0
-        };
-        
-        // Player class
-        class Player {
-            constructor(x, y, name) {
-                this.x = x;
-                this.y = y;
-                this.name = name;
-                this.radius = 20;
-                this.color = '#a855f7';
-                this.angle = 0;
-                this.speed = 5;
-                this.targetX = x;
-                this.targetY = y;
-            }
-            
-            update() {
-                // Move towards target
-                const dx = this.targetX - this.x;
-                const dy = this.targetY - this.y;
-                const distance = Math.sqrt(dx*dx + dy*dy);
-                
-                if (distance > 1) {
-                    this.x += (dx / distance) * this.speed;
-                    this.y += (dy / distance) * this.speed;
-                    this.angle = Math.atan2(dy, dx);
-                }
-                
-                // Keep in bounds
-                const margin = 50;
-                if (this.x < margin) this.x = margin;
-                if (this.x > canvas.width - margin) this.x = canvas.width - margin;
-                if (this.y < margin) this.y = margin;
-                if (this.y > canvas.height - margin) this.y = canvas.height - margin;
-            }
-            
-            draw() {
-                // Draw body
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
-                
-                // Body
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Eyes
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.arc(15, -8, 6, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(15, 8, 6, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Pupils
-                ctx.fillStyle = 'black';
-                ctx.beginPath();
-                ctx.arc(17, -6, 3, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(17, 10, 3, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Mouth
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(10, 0, 8, 0.2, Math.PI - 0.2);
-                ctx.stroke();
-                
-                ctx.restore();
-                
-                // Name
-                ctx.fillStyle = 'white';
-                ctx.font = '14px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(this.name, this.x, this.y - this.radius - 10);
-            }
-            
-            setTarget(x, y) {
-                this.targetX = x;
-                this.targetY = y;
-            }
-        }
-        
-        // Food class
-        class Food {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.radius = 10 + Math.random() * 10;
-                this.color = this.getRandomColor();
-                this.emoji = this.getRandomEmoji();
-            }
-            
-            getRandomColor() {
-                const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
-                return colors[Math.floor(Math.random() * colors.length)];
-            }
-            
-            getRandomEmoji() {
-                const emojis = ['🍎', '🍕', '🍔', '🍟', '🍩', '🍗', '🧀', '🥓'];
-                return emojis[Math.floor(Math.random() * emojis.length)];
-            }
-            
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                
-                // Glow effect
-                ctx.shadowColor = this.color;
-                ctx.shadowBlur = 15;
-                
-                // Draw emoji
-                ctx.font = `${this.radius * 2}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(this.emoji, 0, 0);
-                
-                ctx.restore();
-            }
-        }
-        
-        // Projectile class
-        class Projectile {
-            constructor(x, y, angle) {
-                this.x = x;
-                this.y = y;
-                this.angle = angle;
-                this.radius = 8;
-                this.color = '#3b82f6';
-                this.speed = 12;
-                this.life = 100;
-            }
-            
-            update() {
-                this.x += Math.cos(this.angle) * this.speed;
-                this.y += Math.sin(this.angle) * this.speed;
-                this.life--;
-                return this.life > 0;
-            }
-            
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                
-                // Glow
-                ctx.shadowColor = this.color;
-                ctx.shadowBlur = 10;
-                
-                // Body
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Core
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius * 0.5, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.restore();
-            }
-        }
-        
-        // ==================== GAME FUNCTIONS ====================
-        function initGame() {
-            console.log('Initializing game...');
-            
-            // Setup canvas
-            resizeCanvas();
-            
-            // Create player
-            const nick = document.getElementById('nick').value.trim() || 'Player';
-            GameState.player = new Player(canvas.width/2, canvas.height/2, nick);
-            
-            // Create foods
-            GameState.foods = [];
-            for (let i = 0; i < 30; i++) {
-                GameState.foods.push(new Food());
-            }
-            
-            // Hide menu, show game
-            document.getElementById('menu').style.display = 'none';
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('hud').style.display = 'block';
-            document.getElementById('mobile-controls').style.display = 'flex';
-            
-            GameState.active = true;
-            
-            // Start game loop
-            gameLoop();
-            
-            // Success message
-            console.log('Game started successfully!');
-        }
         
         function resizeCanvas() {
             canvas.width = window.innerWidth;
@@ -428,284 +746,439 @@
             console.log(`Canvas: ${canvas.width}x${canvas.height}`);
         }
         
-        function gameLoop() {
-            if (!GameState.active || GameState.paused) return;
-            
-            // Clear canvas
-            ctx.fillStyle = '#050510';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw grid
-            drawGrid();
-            
-            // Update and draw player
-            if (GameState.player) {
-                GameState.player.update();
-                GameState.player.draw();
-            }
-            
-            // Update and draw foods
-            GameState.foods.forEach((food, index) => {
-                food.draw();
+        resizeCanvas();
+        
+        // Hide loading setelah 1 detik (bukan 1.5)
+        setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('ui-layer').style.display = 'flex';
+            console.log("✅ Game siap!");
+        }, 1000);
+
+        // ==================== KONFIGURASI SEDERHANA ====================
+        const CONFIG = {
+            WORLD_SIZE: 4000,
+            FOOD_COUNT: 50,
+            BOT_COUNT: 10,
+            PLAYER_SIZE: 20,
+            COLLISION_DISTANCE: 30,
+            SHOOT_COOLDOWN: 500
+        };
+
+        // ==================== STATE ====================
+        const GameState = {
+            active: false,
+            paused: false,
+            mode: 'menu',
+            player: null,
+            foods: [],
+            bots: [],
+            projectiles: [],
+            players: new Map(),
+            cam: { x: 0, y: 0 },
+            coins: 0,
+            colorLevel: 0,
+            ammo: { normal: 30, fire: 15, special: 8 },
+            playerHealth: 100,
+            lastShootTime: 0,
+            shootCooldown: false
+        };
+
+        // ==================== SNAKE CLASS SEDERHANA ====================
+        class RainbowSnake {
+            constructor(x, y, name, color, isBot = false) {
+                this.x = x;
+                this.y = y;
+                this.name = name;
+                this.color = color;
+                this.isBot = isBot;
+                this.angle = Math.random() * Math.PI * 2;
+                this.radius = CONFIG.PLAYER_SIZE;
+                this.score = 0;
+                this.health = 100;
+                this.segments = [];
                 
-                // Check collision with player
-                if (GameState.player) {
-                    const dx = GameState.player.x - food.x;
-                    const dy = GameState.player.y - food.y;
-                    const distance = Math.sqrt(dx*dx + dy*dy);
+                // Buat 5 segment awal
+                for(let i = 0; i < 5; i++) {
+                    this.segments.push({ x: this.x, y: this.y });
+                }
+            }
+
+            update() {
+                // Gerakan sederhana untuk demo
+                if (!this.isBot) {
+                    // Player dikontrol oleh touch/mouse
+                } else {
+                    // Bot gerak random
+                    this.angle += (Math.random() - 0.5) * 0.2;
+                    this.x += Math.cos(this.angle) * 2;
+                    this.y += Math.sin(this.angle) * 2;
+                }
+                
+                // Update segments
+                this.segments[0] = { x: this.x, y: this.y };
+                for(let i = 1; i < this.segments.length; i++) {
+                    const prev = this.segments[i-1];
+                    const curr = this.segments[i];
                     
-                    if (distance < GameState.player.radius + food.radius) {
-                        // Eat food
-                        GameState.score += 100;
-                        GameState.health = Math.min(100, GameState.health + 5);
-                        updateHUD();
-                        
-                        // Remove food
-                        GameState.foods.splice(index, 1);
-                        
-                        // Add new food
-                        GameState.foods.push(new Food());
-                        
-                        // Visual effect
-                        createParticles(food.x, food.y, food.color);
+                    const dx = prev.x - curr.x;
+                    const dy = prev.y - curr.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if(dist > 10) {
+                        curr.x += dx * 0.3;
+                        curr.y += dy * 0.3;
                     }
                 }
-            });
-            
-            // Update and draw projectiles
-            GameState.projectiles = GameState.projectiles.filter(projectile => {
-                if (projectile.update()) {
-                    projectile.draw();
-                    return true;
-                }
-                return false;
-            });
-            
-            // Continue loop
-            requestAnimationFrame(gameLoop);
-        }
-        
-        function drawGrid() {
-            const gridSize = 50;
-            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-            ctx.lineWidth = 1;
-            
-            // Vertical lines
-            for (let x = 0; x < canvas.width; x += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
             }
-            
-            // Horizontal lines
-            for (let y = 0; y < canvas.height; y += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
-            }
-        }
-        
-        function createParticles(x, y, color) {
-            // Simple particle effect
-            for (let i = 0; i < 5; i++) {
-                setTimeout(() => {
-                    ctx.save();
-                    ctx.translate(x, y);
-                    ctx.fillStyle = color;
+
+            draw() {
+                // Draw segments
+                for(let i = this.segments.length - 1; i >= 0; i--) {
+                    const seg = this.segments[i];
+                    const segScreenX = seg.x - GameState.cam.x + canvas.width/2;
+                    const segScreenY = seg.y - GameState.cam.y + canvas.height/2;
+                    
+                    const size = this.radius * (0.4 + (i / this.segments.length) * 0.6);
+                    
+                    ctx.shadowColor = this.color;
+                    ctx.shadowBlur = 15;
+                    ctx.fillStyle = this.color;
                     ctx.beginPath();
-                    ctx.arc(
-                        Math.random() * 20 - 10,
-                        Math.random() * 20 - 10,
-                        Math.random() * 5 + 2,
-                        0, Math.PI * 2
-                    );
+                    ctx.arc(segScreenX, segScreenY, size, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.restore();
-                }, i * 50);
+                    
+                    if(i === 0) {
+                        // Draw face
+                        ctx.save();
+                        ctx.translate(segScreenX, segScreenY);
+                        ctx.rotate(this.angle);
+                        
+                        // Eyes
+                        ctx.fillStyle = "#fff";
+                        ctx.beginPath();
+                        ctx.arc(15, -8, 6, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(15, 8, 6, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Pupils
+                        ctx.fillStyle = "#000";
+                        ctx.beginPath();
+                        ctx.arc(17, -6, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(17, 10, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Mouth
+                        ctx.strokeStyle = "#000";
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(10, 0, 8, 0.2, Math.PI - 0.2);
+                        ctx.stroke();
+                        
+                        ctx.restore();
+                        
+                        // Draw name
+                        ctx.fillStyle = "#fff";
+                        ctx.font = "14px Arial";
+                        ctx.textAlign = "center";
+                        ctx.fillText(this.name, segScreenX, segScreenY - size - 20);
+                    }
+                }
+                ctx.shadowBlur = 0;
             }
-        }
-        
-        function updateHUD() {
-            document.getElementById('score').textContent = GameState.score;
-            document.getElementById('health').textContent = GameState.health;
-        }
-        
+        };
+
+        // ==================== GAME SYSTEM ====================
+        const Game = {
+            startSolo() {
+                console.log("🎮 Memulai game solo...");
+                
+                const nick = document.getElementById('nick').value.trim() || "Player";
+                
+                GameState.active = true;
+                GameState.paused = false;
+                GameState.mode = 'solo';
+                GameState.player = new RainbowSnake(0, 0, nick, '#a855f7');
+                
+                // Buat makanan
+                GameState.foods = [];
+                for(let i = 0; i < CONFIG.FOOD_COUNT; i++) {
+                    GameState.foods.push({
+                        x: (Math.random() - 0.5) * CONFIG.WORLD_SIZE,
+                        y: (Math.random() - 0.5) * CONFIG.WORLD_SIZE,
+                        icon: '🍎',
+                        color: '#ef4444',
+                        size: 20
+                    });
+                }
+                
+                // Buat bot
+                GameState.bots = [];
+                for(let i = 0; i < CONFIG.BOT_COUNT; i++) {
+                    const bot = new RainbowSnake(
+                        (Math.random() - 0.5) * CONFIG.WORLD_SIZE,
+                        (Math.random() - 0.5) * CONFIG.WORLD_SIZE,
+                        'Bot-' + (i+1),
+                        `hsl(${Math.random() * 360}, 70%, 60%)`,
+                        true
+                    );
+                    bot.score = Math.floor(Math.random() * 1000);
+                    GameState.bots.push(bot);
+                }
+                
+                // Tampilkan UI game
+                this.showGameUI();
+                
+                // Mulai game loop
+                this.loop();
+                
+                console.log("✅ Game solo berjalan!");
+            },
+            
+            showGameUI() {
+                document.getElementById('ui-layer').style.display = 'none';
+                document.getElementById('hud').style.display = 'flex';
+                document.getElementById('mobile-controls').style.display = 'flex';
+                
+                // Setup touch controls
+                this.setupTouchControls();
+            },
+            
+            setupTouchControls() {
+                let isTouching = false;
+                
+                canvas.addEventListener('touchstart', (e) => {
+                    if (!GameState.player || !GameState.active) return;
+                    e.preventDefault();
+                    isTouching = true;
+                    this.handleTouch(e.touches[0]);
+                });
+                
+                canvas.addEventListener('touchmove', (e) => {
+                    if (!GameState.player || !GameState.active || !isTouching) return;
+                    e.preventDefault();
+                    this.handleTouch(e.touches[0]);
+                });
+                
+                canvas.addEventListener('touchend', () => {
+                    isTouching = false;
+                });
+                
+                // Mouse controls untuk desktop
+                canvas.addEventListener('mousedown', (e) => {
+                    if (!GameState.player || !GameState.active) return;
+                    isTouching = true;
+                    this.handleTouch(e);
+                });
+                
+                canvas.addEventListener('mousemove', (e) => {
+                    if (!GameState.player || !GameState.active || !isTouching) return;
+                    this.handleTouch(e);
+                });
+                
+                canvas.addEventListener('mouseup', () => {
+                    isTouching = false;
+                });
+            },
+            
+            handleTouch(touch) {
+                const rect = canvas.getBoundingClientRect();
+                const touchX = touch.clientX - rect.left;
+                const touchY = touch.clientY - rect.top;
+                
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                
+                const dx = touchX - centerX;
+                const dy = touchY - centerY;
+                const angle = Math.atan2(dy, dx);
+                
+                if (GameState.player) {
+                    GameState.player.angle = angle;
+                    GameState.player.x += Math.cos(angle) * 5;
+                    GameState.player.y += Math.sin(angle) * 5;
+                }
+            },
+            
+            loop() {
+                if(!GameState.active || GameState.paused) return;
+                
+                // Clear canvas
+                ctx.fillStyle = '#050510';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw grid
+                this.drawGrid();
+                
+                // Update camera
+                if (GameState.player) {
+                    GameState.cam.x += (GameState.player.x - GameState.cam.x) * 0.1;
+                    GameState.cam.y += (GameState.player.y - GameState.cam.y) * 0.1;
+                }
+                
+                // Draw foods
+                GameState.foods.forEach(food => {
+                    const screenX = food.x - GameState.cam.x + canvas.width/2;
+                    const screenY = food.y - GameState.cam.y + canvas.height/2;
+                    
+                    ctx.shadowColor = food.color;
+                    ctx.shadowBlur = 20;
+                    ctx.font = `${food.size}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(food.icon, screenX, screenY);
+                    ctx.shadowBlur = 0;
+                    
+                    // Check collision
+                    if (GameState.player) {
+                        const dist = Math.sqrt(
+                            Math.pow(GameState.player.x - food.x, 2) + 
+                            Math.pow(GameState.player.y - food.y, 2)
+                        );
+                        
+                        if(dist < CONFIG.COLLISION_DISTANCE) {
+                            GameState.player.score += 100;
+                            GameState.coins += 10;
+                            this.updateHUD();
+                            
+                            // Remove and add new food
+                            const index = GameState.foods.indexOf(food);
+                            GameState.foods.splice(index, 1);
+                            GameState.foods.push({
+                                x: (Math.random() - 0.5) * CONFIG.WORLD_SIZE,
+                                y: (Math.random() - 0.5) * CONFIG.WORLD_SIZE,
+                                icon: '🍎',
+                                color: '#ef4444',
+                                size: 20
+                            });
+                        }
+                    }
+                });
+                
+                // Update and draw bots
+                GameState.bots.forEach(bot => {
+                    bot.update();
+                    bot.draw();
+                });
+                
+                // Draw player
+                if (GameState.player) {
+                    GameState.player.update();
+                    GameState.player.draw();
+                }
+                
+                // Update HUD
+                this.updateHUD();
+                
+                // Continue loop
+                requestAnimationFrame(() => this.loop());
+            },
+            
+            drawGrid() {
+                const gridSize = 100;
+                const offsetX = (GameState.cam.x % gridSize) - gridSize;
+                const offsetY = (GameState.cam.y % gridSize) - gridSize;
+                
+                ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                ctx.lineWidth = 1;
+                
+                for(let x = offsetX; x < canvas.width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                for(let y = offsetY; y < canvas.height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            },
+            
+            updateHUD() {
+                if (GameState.player) {
+                    document.getElementById('score').textContent = GameState.player.score;
+                    document.getElementById('coins').textContent = GameState.coins;
+                    document.getElementById('health').textContent = GameState.playerHealth;
+                }
+            }
+        };
+
+        // ==================== ROOM SYSTEM ====================
+        const Room = {
+            show() {
+                document.getElementById('room-layer').style.display = 'flex';
+            },
+
+            hide() {
+                document.getElementById('room-layer').style.display = 'none';
+            },
+
+            create() {
+                alert("🆕 Fitur Mabar LAN akan segera hadir!");
+                this.hide();
+            },
+
+            join() {
+                alert("👥 Fitur Mabar LAN akan segera hadir!");
+                this.hide();
+            }
+        };
+
+        // ==================== HELPER FUNCTIONS ====================
         function shoot() {
-            if (!GameState.active || GameState.paused || !GameState.player) return;
+            if (!GameState.player || !GameState.active || GameState.paused) return;
             
             const now = Date.now();
-            if (now - GameState.lastShootTime < 500) return; // 500ms cooldown
+            if (now - GameState.lastShootTime < CONFIG.SHOOT_COOLDOWN) return;
             
             GameState.lastShootTime = now;
             
-            // Create projectile
-            const projectile = new Projectile(
-                GameState.player.x,
-                GameState.player.y,
-                GameState.player.angle
-            );
-            
-            GameState.projectiles.push(projectile);
-            
-            // Recoil
-            GameState.player.x -= Math.cos(GameState.player.angle) * 10;
-            GameState.player.y -= Math.sin(GameState.player.angle) * 10;
-            
-            // Sound effect
-            playSound('shoot');
+            console.log("🔫 Tembak!");
         }
-        
-        function speedBoost() {
-            if (!GameState.active || !GameState.player) return;
+
+        function activateSpeed() {
+            if (!GameState.player || !GameState.active) return;
             
-            const originalSpeed = GameState.player.speed;
-            GameState.player.speed *= 2;
-            
-            setTimeout(() => {
-                if (GameState.player) {
-                    GameState.player.speed = originalSpeed;
-                }
-            }, 2000);
-            
-            playSound('boost');
+            console.log("⚡ Speed boost!");
         }
-        
-        function playSound(type) {
-            // Simple beep sounds
-            try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                if (type === 'shoot') {
-                    oscillator.frequency.value = 1000;
-                } else if (type === 'boost') {
-                    oscillator.frequency.value = 800;
-                }
-                
-                oscillator.type = 'sine';
-                gainNode.gain.value = 0.1;
-                
-                oscillator.start();
-                
-                setTimeout(() => {
-                    oscillator.stop();
-                    audioContext.close();
-                }, 100);
-            } catch (e) {
-                console.log('Audio not supported');
-            }
+
+        function activateMagnet() {
+            if (!GameState.player || !GameState.active) return;
+            
+            console.log("🧲 Magnet aktif!");
         }
-        
-        function startGame() {
-            // Hide loading screen
-            document.getElementById('loading').style.display = 'none';
+
+        function pauseGame() {
+            if (!GameState.active) return;
             
-            // Start game
-            setTimeout(() => {
-                initGame();
-                console.log('Game started!');
-            }, 100);
+            GameState.paused = !GameState.paused;
+            console.log(GameState.paused ? "⏸️ Game dijeda" : "▶️ Game dilanjutkan");
         }
-        
-        // ==================== EVENT LISTENERS ====================
-        // Touch/mouse controls
-        canvas.addEventListener('touchstart', handleTouch);
-        canvas.addEventListener('mousedown', handleTouch);
-        
-        function handleTouch(e) {
-            if (!GameState.active || !GameState.player) return;
-            
-            e.preventDefault();
-            
-            let clientX, clientY;
-            
-            if (e.type === 'touchstart') {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
-            
-            GameState.player.setTarget(x, y);
+
+        // ==================== PWA SYSTEM ====================
+        function showInstallGuide() {
+            alert("📲 Untuk install app:\n\n• Chrome Android: Menu → Add to Home screen\n• Safari iOS: Share → Add to Home Screen\n• Chrome Desktop: Klik icon + di address bar");
         }
-        
-        // Resize handler
-        window.addEventListener('resize', resizeCanvas);
-        
-        // Keyboard controls
-        document.addEventListener('keydown', (e) => {
-            if (!GameState.active || !GameState.player) return;
-            
-            switch(e.key) {
-                case ' ':
-                case 'Spacebar':
-                    shoot();
-                    break;
-                case 'ArrowUp':
-                case 'w':
-                    GameState.player.setTarget(
-                        GameState.player.x,
-                        GameState.player.y - 50
-                    );
-                    break;
-                case 'ArrowDown':
-                case 's':
-                    GameState.player.setTarget(
-                        GameState.player.x,
-                        GameState.player.y + 50
-                    );
-                    break;
-                case 'ArrowLeft':
-                case 'a':
-                    GameState.player.setTarget(
-                        GameState.player.x - 50,
-                        GameState.player.y
-                    );
-                    break;
-                case 'ArrowRight':
-                case 'd':
-                    GameState.player.setTarget(
-                        GameState.player.x + 50,
-                        GameState.player.y
-                    );
-                    break;
-            }
-        });
-        
+
         // ==================== INITIALIZATION ====================
-        window.addEventListener('load', () => {
-            console.log('Page loaded');
-            
-            // Hide loading after 2 seconds
-            setTimeout(() => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('menu').style.display = 'block';
-                console.log('Game ready to play!');
-            }, 1500);
-            
-            // Simple PWA service worker
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(() => console.log('SW registered'))
-                    .catch(err => console.log('SW error:', err));
-            }
-        });
-        
+        window.addEventListener('resize', resizeCanvas);
+
         // Export functions
-        window.startGame = startGame;
+        window.Game = Game;
+        window.Room = Room;
         window.shoot = shoot;
-        window.speedBoost = speedBoost;
+        window.activateSpeed = activateSpeed;
+        window.activateMagnet = activateMagnet;
+        window.pauseGame = pauseGame;
+        window.showInstallGuide = showInstallGuide;
+
+        console.log("✅ Cacing Arena Pro siap dimainkan!");
     </script>
 </body>
 </html>
